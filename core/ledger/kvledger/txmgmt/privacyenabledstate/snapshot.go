@@ -261,12 +261,12 @@ func (p *DBProvider) ImportFromSnapshot(
 	return nil
 }
 
-// worldStateSnapshotReader encapsulates the two snapshotReaders - one for the public state and another for the
+// worldStateSnapshotReader encapsulates the two SnapshotReaders - one for the public state and another for the
 // pvtstate hashes. worldStateSnapshotReader also implements the interface statedb.FullScanIterator. In the Next()
 // function, it returns the public state data and then the pvtstate hashes
 type worldStateSnapshotReader struct {
-	pubState       *snapshotReader
-	pvtStateHashes *snapshotReader
+	pubState       *SnapshotReader
+	pvtStateHashes *SnapshotReader
 
 	pvtdataHashesConsumers    []SnapshotPvtdataHashesConsumer
 	encodeKeyHashesWithBase64 bool
@@ -278,18 +278,18 @@ func newWorldStateSnapshotReader(
 	pvtdataHashesConsumers []SnapshotPvtdataHashesConsumer,
 	encodeKeyHashesWithBase64 bool,
 ) (*worldStateSnapshotReader, error) {
-	var pubState *snapshotReader
-	var pvtStateHashes *snapshotReader
+	var pubState *SnapshotReader
+	var pvtStateHashes *SnapshotReader
 	var err error
 
-	pubState, err = newSnapshotReader(
+	pubState, err = NewSnapshotReader(
 		dir, pubStateDataFileName, pubStateMetadataFileName,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	pvtStateHashes, err = newSnapshotReader(
+	pvtStateHashes, err = NewSnapshotReader(
 		dir, pvtStateHashesFileName, pvtStateHashesMetadataFileName,
 	)
 	if err != nil {
@@ -431,13 +431,13 @@ func (r *worldStateSnapshotReader) Close() {
 	r.pvtStateHashes.Close()
 }
 
-// snapshotReader reads data from a pair of files (a data file and the corresponding metadata file)
-type snapshotReader struct {
+// SnapshotReader reads data from a pair of files (a data file and the corresponding metadata file)
+type SnapshotReader struct {
 	dataFile *snapshot.FileReader
 	cursor   *cursor
 }
 
-func newSnapshotReader(dir, dataFileName, metadataFileName string) (*snapshotReader, error) {
+func NewSnapshotReader(dir, dataFileName, metadataFileName string) (*SnapshotReader, error) {
 	dataFilePath := filepath.Join(dir, dataFileName)
 	metadataFilePath := filepath.Join(dir, metadataFileName)
 	exist, _, err := fileutil.FileExists(dataFilePath)
@@ -465,7 +465,7 @@ func newSnapshotReader(dir, dataFileName, metadataFileName string) (*snapshotRea
 	if err != nil {
 		return nil, err
 	}
-	return &snapshotReader{
+	return &SnapshotReader{
 		dataFile: dataFile,
 		cursor: &cursor{
 			metadata: metadata,
@@ -496,7 +496,7 @@ func readMetadata(metadataFile *snapshot.FileReader) ([]*metadataRow, error) {
 	return metadata, nil
 }
 
-func (r *snapshotReader) Next() (string, *SnapshotRecord, error) {
+func (r *SnapshotReader) Next() (string, *SnapshotRecord, error) {
 	if !r.cursor.move() {
 		return "", nil, nil
 	}
@@ -508,14 +508,14 @@ func (r *snapshotReader) Next() (string, *SnapshotRecord, error) {
 	return r.cursor.currentNamespace(), snapshotRecord, nil
 }
 
-func (r *snapshotReader) Close() {
+func (r *SnapshotReader) Close() {
 	if r == nil {
 		return
 	}
 	r.dataFile.Close()
 }
 
-func (r *snapshotReader) hasMore() bool {
+func (r *SnapshotReader) hasMore() bool {
 	return r.cursor.canMove()
 }
 

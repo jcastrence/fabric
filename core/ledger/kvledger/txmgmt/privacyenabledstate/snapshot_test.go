@@ -349,7 +349,7 @@ func TestSnapshotReaderNextFunction(t *testing.T) {
 	require.NoError(t, err)
 	w.close()
 
-	r, err := newSnapshotReader(testdir, "datafile", "metadatafile")
+	r, err := NewSnapshotReader(testdir, "datafile", "metadatafile")
 	require.NoError(t, err)
 	require.NotNil(t, r)
 	defer r.Close()
